@@ -230,6 +230,22 @@ textarea:focus {
   border: 1px solid var(--border);
 }
 
+.channel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn.allow {
+  color: #b8f0d0;
+  border-color: #2a5a40;
+  background: #14241c;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .channel-meta {
   min-width: 0;
 }

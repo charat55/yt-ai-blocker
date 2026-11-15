@@ -2,24 +2,14 @@
  * YT AI Channel Blocker - Popup UI
  */
 
-const DEFAULT_KEYWORDS = [
-  '改変または合成されたコンテンツ',
-  'Altered or synthetic content',
-  'AI生成',
-  'Made with AI',
-  'Content was made with AI',
-  'AIで作成されたコンテンツ',
-  'Sounds or visuals were altered or fully generated'
-];
-
 const els = {
   enabledToggle: document.getElementById('enabledToggle'),
-  keywordsInput: document.getElementById('keywordsInput'),
-  saveKeywordsBtn: document.getElementById('saveKeywordsBtn'),
-  resetKeywordsBtn: document.getElementById('resetKeywordsBtn'),
   blockedList: document.getElementById('blockedList'),
   blockedCount: document.getElementById('blockedCount'),
   emptyBlocked: document.getElementById('emptyBlocked'),
+  allowedList: document.getElementById('allowedList'),
+  allowedCount: document.getElementById('allowedCount'),
+  emptyAllowed: document.getElementById('emptyAllowed'),
   exportBtn: document.getElementById('exportBtn'),
   importInput: document.getElementById('importInput'),
   importStatus: document.getElementById('importStatus'),
@@ -31,21 +21,35 @@ function setStatus(message, isError = false) {
   els.importStatus.classList.toggle('error', Boolean(isError));
 }
 
+function channelKey(ch) {
+  return ch?.id || ch?.handle || ch?.channelUcId || '';
+}
+
 async function getSettings() {
   return chrome.storage.local.get([
     'enabled',
     'autoAction',
-    'keywords',
     'debugLog',
-    'blockedChannels'
+    'blockedChannels',
+    'allowedChannels'
   ]);
 }
 
-function parseKeywords(text) {
-  return String(text || '')
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+function createMeta(ch) {
+  const meta = document.createElement('div');
+  meta.className = 'channel-meta';
+
+  const name = document.createElement('div');
+  name.className = 'channel-name';
+  name.textContent = ch.name || ch.id || '(unknown)';
+  meta.appendChild(name);
+
+  const id = document.createElement('div');
+  id.className = 'channel-id';
+  id.textContent = [ch.id, ch.handle, ch.channelUcId].filter(Boolean).join(' / ');
+  meta.appendChild(id);
+
+  return meta;
 }
 
 function renderBlockedList(channels) {
@@ -56,19 +60,43 @@ function renderBlockedList(channels) {
 
   for (const ch of list) {
     const li = document.createElement('li');
+    li.appendChild(createMeta(ch));
 
-    const meta = document.createElement('div');
-    meta.className = 'channel-meta';
+    const actions = document.createElement('div');
+    actions.className = 'channel-actions';
 
-    const name = document.createElement('div');
-    name.className = 'channel-name';
-    name.textContent = ch.name || ch.id || '(unknown)';
-    meta.appendChild(name);
+    const allowBtn = document.createElement('button');
+    allowBtn.type = 'button';
+    allowBtn.className = 'btn allow';
+    allowBtn.textContent = 'このチャンネルは許可';
+    allowBtn.title = '許可リストへ移動（以降ブロックしない）';
+    allowBtn.addEventListener('click', async () => {
+      const data = await getSettings();
+      const key = channelKey(ch);
+      const blockedNext = (data.blockedChannels || []).filter((c) => channelKey(c) !== key);
+      const allowed = data.allowedChannels || [];
+      const already = allowed.some((c) => channelKey(c) === key);
+      const allowedNext = already
+        ? allowed
+        : [
+            ...allowed,
+            {
+              id: ch.id,
+              name: ch.name,
+              handle: ch.handle || '',
+              channelUcId: ch.channelUcId || '',
+              allowedAt: new Date().toISOString()
+            }
+          ];
 
-    const id = document.createElement('div');
-    id.className = 'channel-id';
-    id.textContent = ch.id || ch.handle || '';
-    meta.appendChild(id);
+      await chrome.storage.local.set({
+        blockedChannels: blockedNext,
+        allowedChannels: allowedNext
+      });
+      renderBlockedList(blockedNext);
+      renderAllowedList(allowedNext);
+      setStatus(`「${ch.name || ch.id}」を許可しました`);
+    });
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
@@ -76,17 +104,43 @@ function renderBlockedList(channels) {
     removeBtn.textContent = '解除';
     removeBtn.addEventListener('click', async () => {
       const data = await getSettings();
-      const next = (data.blockedChannels || []).filter(
-        (c) => (c.id || c.handle) !== (ch.id || ch.handle)
-      );
+      const next = (data.blockedChannels || []).filter((c) => channelKey(c) !== channelKey(ch));
       await chrome.storage.local.set({ blockedChannels: next });
       renderBlockedList(next);
-      setStatus(`「${ch.name || ch.id}」を解除しました`);
+      setStatus(`「${ch.name || ch.id}」のブロックを解除しました`);
     });
 
-    li.appendChild(meta);
-    li.appendChild(removeBtn);
+    actions.appendChild(allowBtn);
+    actions.appendChild(removeBtn);
+    li.appendChild(actions);
     els.blockedList.appendChild(li);
+  }
+}
+
+function renderAllowedList(channels) {
+  const list = Array.isArray(channels) ? channels : [];
+  els.allowedCount.textContent = String(list.length);
+  els.allowedList.innerHTML = '';
+  els.emptyAllowed.classList.toggle('hidden', list.length > 0);
+
+  for (const ch of list) {
+    const li = document.createElement('li');
+    li.appendChild(createMeta(ch));
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn danger';
+    removeBtn.textContent = '許可解除';
+    removeBtn.addEventListener('click', async () => {
+      const data = await getSettings();
+      const next = (data.allowedChannels || []).filter((c) => channelKey(c) !== channelKey(ch));
+      await chrome.storage.local.set({ allowedChannels: next });
+      renderAllowedList(next);
+      setStatus(`「${ch.name || ch.id}」の許可を解除しました`);
+    });
+
+    li.appendChild(removeBtn);
+    els.allowedList.appendChild(li);
   }
 }
 
@@ -100,12 +154,8 @@ async function render() {
   const radio = document.querySelector(`input[name="autoAction"][value="${action}"]`);
   if (radio) radio.checked = true;
 
-  const keywords = Array.isArray(data.keywords) && data.keywords.length
-    ? data.keywords
-    : DEFAULT_KEYWORDS;
-  els.keywordsInput.value = keywords.join('\n');
-
   renderBlockedList(data.blockedChannels || []);
+  renderAllowedList(data.allowedChannels || []);
 }
 
 els.enabledToggle.addEventListener('change', async () => {
@@ -121,22 +171,6 @@ document.querySelectorAll('input[name="autoAction"]').forEach((input) => {
   });
 });
 
-els.saveKeywordsBtn.addEventListener('click', async () => {
-  const keywords = parseKeywords(els.keywordsInput.value);
-  if (!keywords.length) {
-    setStatus('キーワードを1つ以上入力してください', true);
-    return;
-  }
-  await chrome.storage.local.set({ keywords });
-  setStatus(`キーワードを ${keywords.length} 件保存しました`);
-});
-
-els.resetKeywordsBtn.addEventListener('click', async () => {
-  els.keywordsInput.value = DEFAULT_KEYWORDS.join('\n');
-  await chrome.storage.local.set({ keywords: DEFAULT_KEYWORDS });
-  setStatus('デフォルトキーワードに戻しました');
-});
-
 els.debugToggle.addEventListener('change', async () => {
   await chrome.storage.local.set({ debugLog: els.debugToggle.checked });
   setStatus(els.debugToggle.checked ? 'デバッグログをONにしました' : 'デバッグログをOFFにしました');
@@ -145,12 +179,12 @@ els.debugToggle.addEventListener('change', async () => {
 els.exportBtn.addEventListener('click', async () => {
   const data = await getSettings();
   const payload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     enabled: data.enabled !== false,
     autoAction: data.autoAction || 'notify',
-    keywords: data.keywords || DEFAULT_KEYWORDS,
-    blockedChannels: data.blockedChannels || []
+    blockedChannels: data.blockedChannels || [],
+    allowedChannels: data.allowedChannels || []
   };
 
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -170,21 +204,28 @@ els.importInput.addEventListener('change', async () => {
   try {
     const text = await file.text();
     const json = JSON.parse(text);
-
     const patch = {};
+
     if (typeof json.enabled === 'boolean') patch.enabled = json.enabled;
     if (typeof json.autoAction === 'string') patch.autoAction = json.autoAction;
-    if (Array.isArray(json.keywords)) patch.keywords = json.keywords.filter(Boolean);
-    if (Array.isArray(json.blockedChannels)) {
-      // 既存とマージ（id 重複はスキップ）
-      const current = (await getSettings()).blockedChannels || [];
+
+    const mergeList = (current, incoming) => {
       const map = new Map();
-      for (const ch of [...current, ...json.blockedChannels]) {
-        const key = ch.id || ch.handle;
+      for (const ch of [...(current || []), ...(incoming || [])]) {
+        const key = channelKey(ch);
         if (!key) continue;
         if (!map.has(key)) map.set(key, ch);
       }
-      patch.blockedChannels = [...map.values()];
+      return [...map.values()];
+    };
+
+    if (Array.isArray(json.blockedChannels)) {
+      const current = (await getSettings()).blockedChannels || [];
+      patch.blockedChannels = mergeList(current, json.blockedChannels);
+    }
+    if (Array.isArray(json.allowedChannels)) {
+      const current = (await getSettings()).allowedChannels || [];
+      patch.allowedChannels = mergeList(current, json.allowedChannels);
     }
 
     if (!Object.keys(patch).length) {
@@ -207,6 +248,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.blockedChannels) {
     renderBlockedList(changes.blockedChannels.newValue || []);
+  }
+  if (changes.allowedChannels) {
+    renderAllowedList(changes.allowedChannels.newValue || []);
   }
 });
 

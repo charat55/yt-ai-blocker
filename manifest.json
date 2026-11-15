@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YT AI Channel Blocker",
-  "version": "1.0.0",
-  "description": "YouTubeのAI開示ラベル付き動画を検知し、チャンネルをブロックリストへ記録して一覧から非表示にします。",
+  "version": "1.1.0",
+  "description": "YouTube公式のAIバッジ付き動画を検知し、チャンネルをブロックリストへ記録して一覧から非表示にします。",
   "permissions": ["storage"],
   "host_permissions": ["https://www.youtube.com/*", "https://youtube.com/*"],
   "background": {
@@ -23,6 +23,12 @@
     "128": "icons/icon128.png"
   },
   "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
+      "js": ["page-bridge.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
     {
       "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
       "js": ["content.js"],

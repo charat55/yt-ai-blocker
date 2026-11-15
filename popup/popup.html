@@ -12,7 +12,7 @@
       <img src="../icons/icon48.png" alt="" width="28" height="28" />
       <div>
         <h1>YT AI Channel Blocker</h1>
-        <p class="subtitle">AI開示チャンネルの受動的ブロック</p>
+        <p class="subtitle">公式AIバッジ検知によるチャンネルブロック</p>
       </div>
     </div>
     <label class="switch" title="拡張機能の有効/無効">
@@ -24,6 +24,7 @@
   <main>
     <section class="section">
       <h2>AI検知時の動作</h2>
+      <p class="hint">プレイヤー下の公式「AI」バッジがある動画のチャンネルを自動記録します。</p>
       <div class="radio-group" role="radiogroup" aria-label="AI検知時の動作">
         <label class="radio">
           <input type="radio" name="autoAction" value="notify" />
@@ -41,22 +42,22 @@
     </section>
 
     <section class="section">
-      <h2>検知キーワード</h2>
-      <p class="hint">1行に1キーワード。YouTubeの表示文言に合わせて編集できます。</p>
-      <textarea id="keywordsInput" rows="6" spellcheck="false"></textarea>
-      <div class="row">
-        <button type="button" id="saveKeywordsBtn" class="btn primary">キーワードを保存</button>
-        <button type="button" id="resetKeywordsBtn" class="btn ghost">デフォルトに戻す</button>
-      </div>
-    </section>
-
-    <section class="section">
       <div class="section-head">
         <h2>ブロック済みチャンネル</h2>
         <span id="blockedCount" class="badge">0</span>
       </div>
       <ul id="blockedList" class="blocked-list"></ul>
       <p id="emptyBlocked" class="empty">ブロック済みチャンネルはありません</p>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>許可チャンネル</h2>
+        <span id="allowedCount" class="badge">0</span>
+      </div>
+      <p class="hint">許可したチャンネルは AI バッジがあってもブロック・非表示しません。</p>
+      <ul id="allowedList" class="blocked-list"></ul>
+      <p id="emptyAllowed" class="empty">許可チャンネルはありません</p>
     </section>
 
     <section class="section">

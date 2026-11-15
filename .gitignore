@@ -6,3 +6,6 @@ Thumbs.db
 node_modules/
 *.crx
 *.pem
+sample.html
+sample*.html
+console_output.txt

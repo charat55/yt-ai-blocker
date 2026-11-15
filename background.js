@@ -3,22 +3,14 @@
  * ストレージの初期化とデフォルト設定の投入を担当する。
  */
 
-const DEFAULT_KEYWORDS = [
-  '改変または合成されたコンテンツ',
-  'Altered or synthetic content',
-  'AI生成',
-  'Made with AI',
-  'Content was made with AI',
-  'AIで作成されたコンテンツ',
-  'Sounds or visuals were altered or fully generated'
-];
+const SETTINGS_VERSION = 3;
 
 const DEFAULT_SETTINGS = {
   enabled: true,
   autoAction: 'notify', // 'back' | 'home' | 'notify'
-  keywords: DEFAULT_KEYWORDS,
   debugLog: false,
-  blockedChannels: [] // [{ id, name, handle, blockedAt }]
+  blockedChannels: [], // [{ id, name, handle, channelUcId, blockedAt }]
+  allowedChannels: [] // [{ id, name, handle, channelUcId, allowedAt }]
 };
 
 chrome.runtime.onInstalled.addListener(async (details) => {
@@ -31,9 +23,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
   }
 
-  // キーワードが空配列の場合はデフォルトへ戻す
-  if (Array.isArray(stored.keywords) && stored.keywords.length === 0) {
-    patch.keywords = DEFAULT_KEYWORDS;
+  if (stored.settingsVersion !== SETTINGS_VERSION) {
+    patch.settingsVersion = SETTINGS_VERSION;
+    if (!Array.isArray(stored.allowedChannels)) {
+      patch.allowedChannels = [];
+    }
   }
 
   if (Object.keys(patch).length > 0) {
@@ -42,6 +36,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   if (details.reason === 'install') {
     console.log('[YT-AI-Blocker] Extension installed. Defaults applied.');
+  } else if (details.reason === 'update') {
+    console.log('[YT-AI-Blocker] Extension updated to settings v' + SETTINGS_VERSION);
   }
 });
 
