@@ -1,0 +1,40 @@
+/* ブロック対象の動画カードを強制非表示 */
+.yt-ai-blocker-hidden {
+  display: none !important;
+}
+
+/* トースト通知 */
+#yt-ai-blocker-toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483647;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(15, 15, 15, 0.92);
+  color: #f1f1f1;
+  font-family: "YouTube Noto", Roboto, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+#yt-ai-blocker-toast.yt-ai-blocker-toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#yt-ai-blocker-toast .yt-ai-blocker-toast-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#yt-ai-blocker-toast .yt-ai-blocker-toast-body {
+  opacity: 0.9;
+  font-size: 13px;
+}

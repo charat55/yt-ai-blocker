@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YT AI Channel Blocker</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <img src="../icons/icon48.png" alt="" width="28" height="28" />
+      <div>
+        <h1>YT AI Channel Blocker</h1>
+        <p class="subtitle">AI開示チャンネルの受動的ブロック</p>
+      </div>
+    </div>
+    <label class="switch" title="拡張機能の有効/無効">
+      <input type="checkbox" id="enabledToggle" />
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <main>
+    <section class="section">
+      <h2>AI検知時の動作</h2>
+      <div class="radio-group" role="radiogroup" aria-label="AI検知時の動作">
+        <label class="radio">
+          <input type="radio" name="autoAction" value="notify" />
+          <span>通知のみ（視聴継続）</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="autoAction" value="back" />
+          <span>前のページへ戻る</span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="autoAction" value="home" />
+          <span>YouTubeトップへ戻る</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>検知キーワード</h2>
+      <p class="hint">1行に1キーワード。YouTubeの表示文言に合わせて編集できます。</p>
+      <textarea id="keywordsInput" rows="6" spellcheck="false"></textarea>
+      <div class="row">
+        <button type="button" id="saveKeywordsBtn" class="btn primary">キーワードを保存</button>
+        <button type="button" id="resetKeywordsBtn" class="btn ghost">デフォルトに戻す</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>ブロック済みチャンネル</h2>
+        <span id="blockedCount" class="badge">0</span>
+      </div>
+      <ul id="blockedList" class="blocked-list"></ul>
+      <p id="emptyBlocked" class="empty">ブロック済みチャンネルはありません</p>
+    </section>
+
+    <section class="section">
+      <h2>バックアップ</h2>
+      <div class="row">
+        <button type="button" id="exportBtn" class="btn">JSONエクスポート</button>
+        <label class="btn file-btn">
+          JSONインポート
+          <input type="file" id="importInput" accept="application/json,.json" hidden />
+        </label>
+      </div>
+      <p id="importStatus" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="section compact">
+      <label class="check">
+        <input type="checkbox" id="debugToggle" />
+        <span>デバッグログ（コンソールに [YT-AI-Blocker] を出力）</span>
+      </label>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
